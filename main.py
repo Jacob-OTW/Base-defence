@@ -3,8 +3,12 @@ import sys
 import time
 import math
 
+import hand
 from settings import *
 from island import land_group
+from button import x_group
+from hand import blueprint_group
+from ObjectX import object_group
 
 
 def HandleKeys():
@@ -14,6 +18,12 @@ def HandleKeys():
             sys.exit()
         elif event.type == pygame.KEYDOWN:
             pass
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if not hand.in_hand:
+                for s in x_group.sprites():
+                    s.check_click(event.pos)
+            else:
+                blueprint_group.sprites()[0].place()
 
 
 class Island(pygame.sprite.Sprite):
@@ -36,13 +46,17 @@ def main():
         last_time = time.time()
         # Events
         land_group.update()
+        blueprint_group.update()
         HandleKeys()
 
         # Visual
         screen.fill((1, 201, 250))
         land_group.draw(screen)
+        x_group.draw(screen)
+        blueprint_group.draw(screen)
+        object_group.draw(screen)
 
-        text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
+        text2 = score_font.render(f"{round(frame_time * 1000)}ms {hand.in_hand}", True, (255, 255, 255))
         screen.blit(text2, (100, 150))
 
         # Refresh
