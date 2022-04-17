@@ -1,6 +1,8 @@
 import pygame
+
+import Vehicles
 from settings import *
-from ObjectX import object_group, objX
+from Vehicles import object_group
 from island import island
 
 
@@ -14,9 +16,10 @@ def fill(surface, color):
 
 
 class blueprint(pygame.sprite.Sprite):
-    def __init__(self, img_path, img_size=1):
+    def __init__(self, obj):
         super().__init__()
-        self.image = pygame.transform.rotozoom(pygame.image.load(img_path).convert_alpha(), 0, img_size)
+        self.obj = obj
+        self.image = pygame.Surface.copy(obj.idle)
         self.image.set_alpha(75)
         fill(self.image, pygame.Color(10, 40, 250))
         self.rect = self.image.get_rect(center=pygame.mouse.get_pos())
@@ -24,20 +27,13 @@ class blueprint(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.center = pygame.mouse.get_pos()
-        self.draw_mask_attach()
 
     def place(self):
         global in_hand
-        if self.mask.overlap_mask(island.mask, (island.rect.x - self.rect.x, island.rect.y - self.rect.y)):
-            object_group.add(objX('Assets/plane.png', 0.1))
+        if self.mask.overlap(island.mask, (island.mask_rect.x - self.rect.x, island.mask_rect.y - self.rect.y)):
+            object_group.add(self.obj(self.rect.center))
             in_hand = False
             self.kill()
-
-    def draw_mask_attach(self):  # Draws the hitbox at the bottom of player for debugging
-        olist = self.mask.outline()
-        img = pygame.Surface([640, 480], pygame.SRCALPHA, 32).convert_alpha()
-        pygame.draw.lines(img, (200, 150, 150), True, olist)
-        screen.blit(img, (self.rect.x, self.rect.y))
 
 
 blueprint_group = pygame.sprite.GroupSingle()
