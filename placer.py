@@ -2,7 +2,7 @@ import pygame
 
 import Vehicles
 from settings import *
-from Vehicles import object_group
+from Vehicles import vehicle_group
 from island import island
 
 
@@ -31,7 +31,7 @@ class blueprint(pygame.sprite.Sprite):
     def place(self):
         global in_hand
         if self.mask.overlap(island.mask, (island.mask_rect.x - self.rect.x, island.mask_rect.y - self.rect.y)):
-            object_group.add(self.obj(self.rect.center))
+            vehicle_group.add(self.obj(self.rect.center))
             in_hand = False
             self.kill()
 

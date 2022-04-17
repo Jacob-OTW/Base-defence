@@ -1,9 +1,8 @@
 import pygame
 
 import Vehicles
-import placer
 from settings import *
-from placer import blueprint_group, blueprint, in_hand
+import placer
 
 
 class Button(pygame.sprite.Sprite):
@@ -26,7 +25,7 @@ class Button(pygame.sprite.Sprite):
     def check_click(self, mouse):
         if self.rect.collidepoint(mouse):
             placer.in_hand = True
-            blueprint_group.add(blueprint(self.obj))
+            placer.blueprint_group.add(placer.blueprint(self.obj))
 
     def update(self):
         pass
