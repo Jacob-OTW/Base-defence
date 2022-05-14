@@ -9,6 +9,7 @@ from island import land_group
 from button import buttons
 from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
+from planes import plane_group
 
 
 def HandleKeys():
@@ -36,6 +37,7 @@ def main():
         blueprint_group.update()
         vehicle_group.update()
         vehicle_projectile_group.update()
+        plane_group.update()
         HandleKeys()
 
         # Visual
@@ -45,6 +47,7 @@ def main():
         blueprint_group.draw(screen)
         vehicle_group.draw(screen)
         vehicle_projectile_group.draw(screen)
+        plane_group.draw(screen)
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
         screen.blit(text2, (100, 150))

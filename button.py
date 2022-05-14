@@ -32,5 +32,5 @@ class Button(pygame.sprite.Sprite):
 
 
 buttons = pygame.sprite.Group()
-buttons.add(Button((500, 500), Vehicles.Vads))
-buttons.add(Button((500, 600), Vehicles.Grad))
+buttons.add(Button((200, 500), Vehicles.Vads))
+buttons.add(Button((200, 600), Vehicles.Grad))
