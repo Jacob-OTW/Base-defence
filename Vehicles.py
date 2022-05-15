@@ -1,5 +1,7 @@
 import random
 
+import pygame
+
 from settings import *
 from planes import plane_group
 
@@ -38,12 +40,20 @@ class Vads(pygame.sprite.Sprite):
             self.position = pygame.math.Vector2(pos)
             self.image = pygame.transform.rotozoom(self.stored, angle, 0.1)
             self.rect = self.image.get_rect(center=self.position)
+            self.mask = pygame.mask.from_surface(self.image)
             self.v = pygame.math.Vector2((5, 0)).rotate(angle)
 
         def update(self):
             self.position[0] += self.v[0]
             self.position[1] -= self.v[1]
             self.rect.center = self.position
+
+            col = pygame.sprite.spritecollide(self, plane_group, False)
+            if col:
+                if self.mask.overlap(col[0].mask,
+                                     (col[0].rect.x - self.rect.x, col[0].rect.y - self.rect.y)):
+                    col[0].health -= 1
+                    self.kill()
 
             if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH or self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
                 self.kill()
@@ -66,14 +76,23 @@ class Vads(pygame.sprite.Sprite):
         else:
             return 0
 
+    def closest_target(self, sprites: list):
+        compare = {250: None}
+        if sprites:
+            for sprite in sprites:
+                compare[dis_to(self.rect.center, sprite.rect.center)] = sprite
+        m = min(compare.keys())
+        return compare[m]
+
+    def shoot(self):
+        if self.target:
+            vehicle_projectile_group.add(
+                self.Vads_bullet(self.rect.center, dir_to(self.rect.center, self.predicted_los(self.target))))
+
     def update(self):
         if plane_group.sprites():
-            self.target = plane_group.sprites()[0]
-        vehicle_projectile_group.add(self.Vads_bullet(self.rect.center,
-                                                      dir_to(
-                                                          self.rect.center, self.predicted_los(self.target))
-                                                      )
-                                     )
+            self.target = self.closest_target(plane_group.sprites())
+        self.shoot()
 
 
 vehicle_group = pygame.sprite.Group()

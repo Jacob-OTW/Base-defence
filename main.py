@@ -9,7 +9,7 @@ from island import land_group
 from button import buttons
 from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
-from planes import plane_group
+from planes import plane_group, F16
 
 
 def HandleKeys():
@@ -28,6 +28,7 @@ def HandleKeys():
 
 
 def main():
+    total_timer = 0
     last_time = time.time()
     while True:
         frame_time = time.time() - last_time
@@ -40,13 +41,18 @@ def main():
         plane_group.update()
         HandleKeys()
 
+        # Timers
+        total_timer += 1
+        if total_timer % 60 == 0:
+            F16.spawn_F16()
+
         # Visual
         screen.fill((1, 201, 250))
         land_group.draw(screen)
         buttons.draw(screen)
         blueprint_group.draw(screen)
-        vehicle_group.draw(screen)
         vehicle_projectile_group.draw(screen)
+        vehicle_group.draw(screen)
         plane_group.draw(screen)
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
@@ -57,4 +63,5 @@ def main():
         clock.tick(60)
 
 
-main()
+if __name__ == '__main__':
+    main()
