@@ -1,12 +1,10 @@
-import pygame
-
 import Vehicles
 from settings import *
 import placer
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, pos, obj):
+    def __init__(self, obj, **kwargs):
         super().__init__()
         self.image = pygame.Surface((100, 100))  # Create Surface
 
@@ -16,7 +14,7 @@ class Button(pygame.sprite.Sprite):
         self.image.blit(i, i_r)
 
         # Create rect and mask
-        self.rect = self.image.get_rect(center=pos)
+        self.rect = self.image.get_rect(**kwargs)
         self.mask = pygame.mask.from_surface(self.image)
 
         # Save data to pass onto blueprint
@@ -32,5 +30,5 @@ class Button(pygame.sprite.Sprite):
 
 
 buttons = pygame.sprite.Group()
-buttons.add(Button((200, 500), Vehicles.Vads))
-buttons.add(Button((200, 600), Vehicles.Grad))
+buttons.add(Button(Vehicles.Vads, bottom=SCREEN_HEIGHT, left=0))
+buttons.add(Button(Vehicles.Grad, bottom=SCREEN_HEIGHT, left=105))

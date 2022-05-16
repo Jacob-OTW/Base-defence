@@ -1,13 +1,10 @@
 import random
-
-import pygame
-
 from settings import *
 from planes import plane_group
 
 
 class Grad(pygame.sprite.Sprite):
-    class missile(pygame.sprite.Sprite):
+    class Missile(pygame.sprite.Sprite):
         def __init__(self, pos):
             super().__init__()
             self.image = pygame.image.load('Assets/bullet.png').convert_alpha()
@@ -24,7 +21,7 @@ class Grad(pygame.sprite.Sprite):
         self.image = Grad.idle
         self.rect = self.image.get_rect(center=pos)
         self.mask = pygame.mask.from_surface(self.image)
-        self.a = Grad.missile(self.rect.center)
+        self.a = Grad.Missile(self.rect.center)
         vehicle_projectile_group.add(self.a)
 
     def update(self):
@@ -32,7 +29,7 @@ class Grad(pygame.sprite.Sprite):
 
 
 class Vads(pygame.sprite.Sprite):
-    class Vads_bullet(pygame.sprite.Sprite):
+    class VadsBullet(pygame.sprite.Sprite):
         def __init__(self, pos, angle):
             super().__init__()
             angle += random.uniform(-5, 5)
@@ -55,7 +52,8 @@ class Vads(pygame.sprite.Sprite):
                     col[0].health -= 1
                     self.kill()
 
-            if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH or self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
+            if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH\
+                    or self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
                 self.kill()
 
     preview = pygame.image.load('Assets/Vehicles/Vads/preview.png').convert_alpha()
@@ -87,7 +85,7 @@ class Vads(pygame.sprite.Sprite):
     def shoot(self):
         if self.target:
             vehicle_projectile_group.add(
-                self.Vads_bullet(self.rect.center, dir_to(self.rect.center, self.predicted_los(self.target))))
+                self.VadsBullet(self.rect.center, dir_to(self.rect.center, self.predicted_los(self.target))))
 
     def update(self):
         if plane_group.sprites():

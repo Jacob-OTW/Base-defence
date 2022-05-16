@@ -9,10 +9,10 @@ from island import land_group
 from button import buttons
 from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
-from planes import plane_group, F16
+from planes import plane_group, F16, Plane
 
 
-def HandleKeys():
+def handle_keys():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -39,12 +39,12 @@ def main():
         vehicle_group.update()
         vehicle_projectile_group.update()
         plane_group.update()
-        HandleKeys()
+        handle_keys()
 
         # Timers
         total_timer += 1
-        if total_timer % 60 == 0:
-            F16.spawn_F16()
+        if total_timer % 500 == 0:
+            F16.spawn_f16()
 
         # Visual
         screen.fill((1, 201, 250))
@@ -54,6 +54,7 @@ def main():
         vehicle_projectile_group.draw(screen)
         vehicle_group.draw(screen)
         plane_group.draw(screen)
+        Plane.element_group.draw(screen)
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
         screen.blit(text2, (100, 150))
