@@ -1,5 +1,3 @@
-import pygame
-
 from settings import *
 
 
@@ -10,10 +8,37 @@ class ShowElement(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=pos)
 
 
+class Path:
+    class Waypoint:
+        def __init__(self, x_pos, y_pos):
+            self.pos = x_pos, y_pos
+
+        def x(self):
+            return self.pos[0]
+
+        def y(self):
+            return self.pos[1]
+
+    def __init__(self, x=0, y=SCREEN_HEIGHT / 2, l=1):
+        self.waypoint_index = 0
+        self.path = []
+        for i in range(int(round(SCREEN_WIDTH / l))):
+            temp_y = self.path[-1].y() + random.uniform(-200, 200) if self.path else y
+            while temp_y > 0 and temp_y > SCREEN_HEIGHT:
+                temp_y = self.path[-1].y() + random.uniform(-200, 200) if self.path else y
+            self.path.append(self.Waypoint(x_pos=x + (SCREEN_WIDTH / l) * i, y_pos=temp_y))
+
+    def selected_waypoint(self):
+        return self.path[self.waypoint_index]
+
+    def next_waypoint(self):
+        self.waypoint_index += 1
+
+
 class Plane(pygame.sprite.Sprite):
     element_group = pygame.sprite.Group()
 
-    def __init__(self, pos=(0, 0), angle=0, img_path='Assets/Planes/F16.png'):
+    def __init__(self, pos=(0, 0), angle=0, img_path='Assets/Planes/F16.png', is_bot=False):
         super().__init__()
         self.position = pygame.math.Vector2(pos)
         self.angle = angle
@@ -26,13 +51,10 @@ class Plane(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
         # Path
-        self.path = []
-        self.waypoint = None
-        self.create_path()
-        """
-        for point in self.path:
-            Plane.element_group.add(ShowElement(point))
-        """
+        if is_bot:
+            self.path = Path(y=self.position[1])
+            for point in self.path.path:
+                Plane.element_group.add(ShowElement(point.pos))
 
     def rotate_img(self):
         self.image = pygame.transform.rotozoom(self.stored, self.angle, self.size)
@@ -59,24 +81,16 @@ class Plane(pygame.sprite.Sprite):
         self.move(2)
         self.rotate_img()
 
-    def create_path(self):
-        for i in range(int(round(SCREEN_WIDTH / 10))):
-            self.path.append((self.rect.centerx + (SCREEN_WIDTH / 10) * i, self.rect.centery + random.uniform(-50, 50)))
-            self.waypoint = self.path[0]
-
-    def next_waypoint(self):
-        self.waypoint = self.path[self.path.index(self.waypoint) + 1]
-
 
 class F16(Plane):
     @classmethod
     def spawn_f16(cls):
-        plane_group.add(F16(pos=(0, random.randint(50, SCREEN_HEIGHT - 50)), angle=0))
+        plane_group.add(F16(pos=(0, random.randint(50, SCREEN_HEIGHT - 50)), angle=0, is_bot=True))
 
     def update(self):
-        if self.rect.centerx > self.waypoint[0]:
-            self.next_waypoint()
-        self.face_to(self.waypoint, speed=1)
+        if self.rect.centerx > self.path.selected_waypoint().x():
+            self.path.next_waypoint()
+        self.face_to(self.path.selected_waypoint().pos, speed=1)
         self.move(2)
         self.rotate_img()
         self.check_health()
