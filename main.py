@@ -5,6 +5,7 @@ from button import buttons
 from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
 from planes import plane_group, F16, Plane
+from effects import smoke_group, flare_group
 
 
 def handle_keys():
@@ -15,6 +16,8 @@ def handle_keys():
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 F16.spawn_f16()
+            elif event.key == pygame.K_w:
+                plane_group.sprites()[0].flare()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if not placer.in_hand:
                 for s in buttons.sprites():
@@ -35,6 +38,8 @@ def main():
         vehicle_group.update()
         vehicle_projectile_group.update()
         plane_group.update()
+        smoke_group.update()
+        flare_group.update()
         handle_keys()
 
         # Timers
@@ -51,6 +56,8 @@ def main():
         vehicle_projectile_group.draw(screen)
         vehicle_group.draw(screen)
         plane_group.draw(screen)
+        flare_group.draw(screen)
+        smoke_group.draw(screen)
         Plane.element_group.draw(screen)
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))

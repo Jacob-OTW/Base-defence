@@ -1,4 +1,5 @@
 from settings import *
+from effects import Flare
 
 
 class ShowElement(pygame.sprite.Sprite):
@@ -45,7 +46,7 @@ class Path:
 
 class Plane(pygame.sprite.Sprite):
     element_group = pygame.sprite.Group()
-    __slots__ = ('position', 'angle', 'v', 'health', 'stored', 'size', 'image', 'rect', 'mask')
+    __slots__ = ('position', 'angle', 'v', 'health', 'stored', 'size', 'image', 'rect', 'mask', 'flare_timer')
 
     def __init__(self, pos=(0, 0), angle=0, img_path='Assets/Planes/F16.png', is_bot=False):
         super().__init__()
@@ -53,11 +54,13 @@ class Plane(pygame.sprite.Sprite):
         self.angle = angle
         self.v = pygame.math.Vector2((0, 0))
         self.health = 100
+        self.threats = []
         self.stored = pygame.image.load(img_path).convert_alpha()
         self.size = 0.3
         self.image = pygame.transform.rotozoom(self.stored, 0, self.size)
         self.rect = self.image.get_rect(center=self.position)
         self.mask = pygame.mask.from_surface(self.image)
+        self.flare_timer = 0
 
         # Path
         if is_bot:
@@ -85,6 +88,9 @@ class Plane(pygame.sprite.Sprite):
         if self.health <= 0:
             self.kill()
 
+    def flare(self):
+            Flare.add_flare(self.rect.center, self.threats)
+
     def update(self):
         self.face_to(pygame.mouse.get_pos())
         self.move(2)
@@ -99,6 +105,9 @@ class F16(Plane):
     def update(self):
         if self.rect.centerx > self.path.selected_waypoint().x():
             self.path.next_waypoint()
+        self.flare_timer += 1
+        if self.threats and self.flare_timer % 30 == 0:
+            self.flare()
         self.face_to(self.path.selected_waypoint().pos, speed=1)
         self.move(2)
         self.rotate_img()

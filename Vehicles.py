@@ -1,5 +1,6 @@
 from settings import *
 from planes import plane_group
+from effects import Smoke
 
 
 class Grad(pygame.sprite.Sprite):
@@ -50,12 +51,9 @@ class Vads(pygame.sprite.Sprite):
             self.position[1] -= self.v[1]
             self.rect.center = self.position
 
-            col = pygame.sprite.spritecollide(self, plane_group, False)
-            if col:
-                if self.mask.overlap(col[0].mask,
-                                     (col[0].rect.x - self.rect.x, col[0].rect.y - self.rect.y)):
-                    col[0].health -= 1
-                    self.kill()
+            for overlap in overlaps_with(self, plane_group.sprites()):
+                overlap.health -= 1
+                self.kill()
 
             if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH \
                     or self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
@@ -104,30 +102,56 @@ class ManAA(pygame.sprite.Sprite):
             self.target = target
             self.angle = dir_to(self.rect.center, self.target.rect.center)
 
-            self.speed = 2.5
+            self.target.threats.append(self)
 
-            self.lifespan = 500
+            self.speed = 3
+
+            self.burner = 90  # Amount of ticks before the missile slows down.
 
         def predicted_los(self, target, r=0):
             if target:
-                t = dis_to(self.rect.center, self.predicted_los(target, r=r + 1) if r <= 2 else target.rect.center) / 5
+                t = dis_to(self.rect.center, self.predicted_los(target, r=r + 1) if r <= 2 else target.rect.center) / self.speed
                 return target.rect.centerx + (target.v[0] * int(t)), target.rect.centery + (
                         -target.v[1] * int(t))
             else:
                 return 0
 
-        def update(self) -> None:
-            if self.target and self.mask.overlap(self.target.mask,
-                                                 (self.target.rect.x - self.rect.x, self.target.rect.y - self.rect.y)):
-                self.target.kill()
+        def check_for_hit(self):
+            for overlap in overlaps_with(self, plane_group.sprites()):
+                overlap.health = 0
+                self.remove_threat()
                 self.kill()
 
+        def remove_threat(self):
+            try:
+                self.target.threats.remove(self)
+            except:
+                pass
+
+        def check_out_of_bounds(self):
             if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH or self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
+                self.remove_threat()
                 self.kill()
 
+        def update(self) -> None:
+            self.check_for_hit()
+            self.check_out_of_bounds()
             if self.target:
-                face_to(self, self.predicted_los(self.target), 2.5)
+                face_to(self, self.predicted_los(self.target), self.speed)
+                if gimbal_limit(self, dir_to(self.rect.center, self.target.rect.center), 70):
+                    self.target = None
 
+            # Slow down the missile
+            self.burner -= 1
+            if self.burner <= 0:
+                self.speed *= 0.993
+                if self.speed <= 0.5:
+                    self.remove_threat()
+                    self.kill()
+            else:
+                Smoke.add_smoke(self.rect.center, spreadx=(-0.2, 0.2), spready=(-0.2, 0.2))
+
+            # Move the missile
             v = pygame.math.Vector2((self.speed, 0)).rotate(self.angle)
             self.pos[0] += v[0]
             self.pos[1] -= v[1]
@@ -159,7 +183,7 @@ class ManAA(pygame.sprite.Sprite):
             )
 
     def update(self):
-        self.target = closest_target(self, plane_group.sprites(), max_range=350)
+        self.target = closest_target(self, plane_group.sprites(), max_range=500)
         self.fire_timer += 1
         if self.target and self.fire_timer % 300 == 0:
             self.shoot()

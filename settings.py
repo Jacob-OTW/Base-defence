@@ -55,3 +55,13 @@ def closest_target(self, sprites: list, max_range=250):
             compare[dis_to(self.rect.center, sprite.rect.center)] = sprite
     m = min(compare.keys())
     return compare[m]
+
+
+def overlaps_with(self, group: pygame.sprite.Group) -> list:
+    """
+    The listed passed into the filter call checks rect collisions, then, only the objects
+    that are also mask colliding will be keep, the final result will be returned
+    """
+    return list(filter(lambda obj: self.mask.overlap(obj.mask,
+                                                     (obj.rect.x - self.rect.x, obj.rect.y - self.rect.y)),
+                       pygame.sprite.spritecollide(self, group, False)))
