@@ -23,7 +23,7 @@ class Button(pygame.sprite.Sprite):
     def check_click(self, mouse):
         if self.rect.collidepoint(mouse):
             placer.in_hand = True
-            placer.blueprint_group.add(placer.blueprint(self.obj))
+            placer.blueprint_group.add(placer.Blueprint(self.obj))
 
     def update(self):
         pass
@@ -32,3 +32,4 @@ class Button(pygame.sprite.Sprite):
 buttons = pygame.sprite.Group()
 buttons.add(Button(Vehicles.Vads, bottom=SCREEN_HEIGHT, left=0))
 buttons.add(Button(Vehicles.Grad, bottom=SCREEN_HEIGHT, left=105))
+buttons.add(Button(Vehicles.ManAA, bottom=SCREEN_HEIGHT, left=210))

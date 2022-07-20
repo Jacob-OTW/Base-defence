@@ -1,8 +1,3 @@
-import pygame
-import sys
-import time
-import math
-
 import placer
 from settings import *
 from island import land_group
@@ -18,7 +13,8 @@ def handle_keys():
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            pass
+            if event.key == pygame.K_SPACE:
+                F16.spawn_f16()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if not placer.in_hand:
                 for s in buttons.sprites():
@@ -44,7 +40,8 @@ def main():
         # Timers
         total_timer += 1
         if total_timer % 500 == 0:
-            F16.spawn_f16()
+            pass
+            # F16.spawn_f16()
 
         # Visual
         screen.fill((1, 201, 250))

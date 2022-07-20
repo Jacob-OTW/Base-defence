@@ -2,13 +2,17 @@ from settings import *
 
 
 class ShowElement(pygame.sprite.Sprite):
-    def __init__(self, pos):
+    def __init__(self, pos, special=False):
         super().__init__()
         self.image = pygame.image.load('Assets/bullet.png').convert_alpha()
+        if special:
+            self.image.fill('red')
         self.rect = self.image.get_rect(center=pos)
 
 
 class Path:
+    __slots__ = ('waypoint_index', 'path')
+
     class Waypoint:
         def __init__(self, x_pos, y_pos):
             self.pos = x_pos, y_pos
@@ -19,14 +23,18 @@ class Path:
         def y(self):
             return self.pos[1]
 
-    def __init__(self, x=0, y=SCREEN_HEIGHT / 2, l=1):
+    def __init__(self, x=0, y=SCREEN_HEIGHT / 2, n_splits=3):
         self.waypoint_index = 0
         self.path = []
-        for i in range(int(round(SCREEN_WIDTH / l))):
-            temp_y = self.path[-1].y() + random.uniform(-200, 200) if self.path else y
-            while temp_y > 0 and temp_y > SCREEN_HEIGHT:
-                temp_y = self.path[-1].y() + random.uniform(-200, 200) if self.path else y
-            self.path.append(self.Waypoint(x_pos=x + (SCREEN_WIDTH / l) * i, y_pos=temp_y))
+        diversion_amount = 1000
+        for i in range(int(round(SCREEN_WIDTH / n_splits))):
+            if not self.path:
+                self.path.append(self.Waypoint(x_pos=x, y_pos=y))
+            else:
+                temp_y = self.path[-1].y() + random.randint(-diversion_amount, diversion_amount)
+                while temp_y < 0 or temp_y > SCREEN_HEIGHT:
+                    temp_y = self.path[-1].y() + random.randint(-diversion_amount, diversion_amount)
+                self.path.append(self.Waypoint(x_pos=x + (SCREEN_WIDTH / n_splits) * i, y_pos=temp_y))
 
     def selected_waypoint(self):
         return self.path[self.waypoint_index]
@@ -37,6 +45,7 @@ class Path:
 
 class Plane(pygame.sprite.Sprite):
     element_group = pygame.sprite.Group()
+    __slots__ = ('position', 'angle', 'v', 'health', 'stored', 'size', 'image', 'rect', 'mask')
 
     def __init__(self, pos=(0, 0), angle=0, img_path='Assets/Planes/F16.png', is_bot=False):
         super().__init__()

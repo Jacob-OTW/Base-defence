@@ -1,6 +1,3 @@
-import pygame
-
-import Vehicles
 from settings import *
 from Vehicles import vehicle_group
 from island import island
@@ -15,7 +12,7 @@ def fill(surface, color):
             surface.set_at((x, y), pygame.Color(r, g, b, a))
 
 
-class blueprint(pygame.sprite.Sprite):
+class Blueprint(pygame.sprite.Sprite):
     def __init__(self, obj):
         super().__init__()
         self.obj = obj
