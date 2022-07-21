@@ -12,9 +12,7 @@ class land(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.mask_img)
 
     def update(self):
-        pass
+        self.rect.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
 
-land_group = pygame.sprite.Group()
-island = land()
-land_group.add(island)
+land_group = pygame.sprite.Group(land())

@@ -8,9 +8,14 @@ SCREEN_WIDTH = 1230
 SCREEN_HEIGHT = 930
 pygame.init()
 clock = pygame.time.Clock()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
 
 score_font = pygame.font.SysFont("arial", 32, pygame.font.Font.bold)
+
+
+def resize(x, y):
+    print("the screen was resized to:", x, y)
+    SCREEN_WIDTH, SCREEN_HEIGHT = x, y
 
 
 def dir_to(mp, tp):
@@ -48,11 +53,16 @@ def gimbal_limit(self, angle: int | float, limit: int | float) -> bool:
     return abs(((self.angle - angle) + 180) % 360 - 180) > limit
 
 
-def closest_target(self, sprites: list, max_range=250):
+def closest_target(self, sprites: list, max_range=250, angle_limit=0, exclude=None):
     compare = {max_range: None}
-    if sprites:
-        for sprite in sprites:
-            compare[dis_to(self.rect.center, sprite.rect.center)] = sprite
+    for sprite in sprites:
+        if sprite is not exclude:
+            if angle_limit == 0:
+                compare[dis_to(self.rect.center, sprite.rect.center)] = sprite
+            else:
+                if not gimbal_limit(self, dir_to(self.rect.center, sprite.rect.center), angle_limit):
+                    compare[dis_to(self.rect.center, sprite.rect.center)] = sprite
+
     m = min(compare.keys())
     return compare[m]
 

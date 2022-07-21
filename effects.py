@@ -3,19 +3,12 @@ from settings import *
 
 class Explosion(pygame.sprite.Sprite):
     @classmethod
-    def add_explosion(cls, pos, m_vec=None, e_type='Ground', size=1.0):
-        effect_group.add(Explosion(pos, e_type=e_type, size=size))
+    def add_explosion(cls, pos):
+        explosion_group.add(Explosion(pos))
 
-    def __init__(self, pos, e_type='Ground', size=1.0):
+    def __init__(self, pos):
         super().__init__()
-        self.e_type = e_type
-        match self.e_type:
-            case 'Ground':
-                self.stored = pygame.transform.rotozoom(pygame.image.load('Assets/explosion.png').convert_alpha(), 0,
-                                                        0.4 * size)
-            case 'Air':
-                self.stored = pygame.transform.rotozoom(pygame.image.load('Assets/explosion_air.png').convert_alpha(),
-                                                        0, 0.8 * size)
+        self.stored = pygame.transform.rotozoom(pygame.image.load('Assets/effects/explosion_air.png').convert_alpha(), 0, 0.8)
         self.size = 0.1
         self.pos = pos
         self.image = pygame.transform.rotozoom(self.stored, 0, self.size)
@@ -24,11 +17,7 @@ class Explosion(pygame.sprite.Sprite):
 
     def update(self):
         self.image = pygame.transform.rotozoom(self.stored, 0, self.size)
-        match self.e_type:
-            case 'Ground':
-                self.rect = self.image.get_rect(midbottom=self.pos)
-            case 'Air':
-                self.rect = self.image.get_rect(center=self.pos)
+        self.rect = self.image.get_rect(center=self.pos)
         if self.size <= 1:
             self.size += 0.1
         else:
@@ -71,21 +60,27 @@ class Flare(pygame.sprite.Sprite):
     def add_flare(cls, pos, threats):
         flare_group.add(Flare(pos, threats))
 
-    def __init__(self, pos, threats):
+    def __init__(self, pos, carrier_threats):
         super().__init__()
         self.pos = pygame.math.Vector2(pos)
         self.size = 0.5
         self.v = pygame.math.Vector2(random.uniform(-0.15, 0.15), random.uniform(-0.15, 0.15))
-        self.threats = threats
+        self.threats = []
         self.stored = pygame.image.load('Assets/effects/flares.png').convert_alpha()
         self.image = pygame.transform.rotozoom(self.stored, 0, self.size)
         self.rect = self.image.get_rect(center=pos)
         self.mask = pygame.mask.from_surface(self.image)
 
-        for threat in self.threats:
+        for threat in carrier_threats:
             if random.uniform(0, 1) < 0.4:
-                threat.target.threats.remove(threat)
-                threat.target = self
+                try:
+                    threat.remove_threat()
+                    self.threats.append(threat)
+                    threat.target = self
+                except AttributeError:
+                    pass
+                except ValueError:
+                    pass
 
     def update(self):
         if random.randint(0, 10) == 0:
@@ -100,6 +95,6 @@ class Flare(pygame.sprite.Sprite):
         self.rect.center = self.pos
 
 
-effect_group = pygame.sprite.Group()
+explosion_group = pygame.sprite.Group()
 smoke_group = pygame.sprite.Group()
 flare_group = pygame.sprite.Group()

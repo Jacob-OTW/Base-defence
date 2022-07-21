@@ -1,5 +1,6 @@
 from settings import *
-from effects import Flare
+from effects import Flare, Smoke
+from Ordnance import Bomb, Sidewinder
 
 
 class ShowElement(pygame.sprite.Sprite):
@@ -44,9 +45,43 @@ class Path:
         self.waypoint_index += 1
 
 
+class AimRetical(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.pos = (-100, 100)
+        self.image = pygame.transform.rotozoom(pygame.image.load('Assets/AimCross.png'), 0, 0.4).convert_alpha()
+        self.image.set_alpha(255 / 2)
+        self.rect = self.image.get_rect(center=self.pos)
+
+        aim_cross_group.add(self)
+
+    def update(self):
+        self.rect.center = self.pos
+
+
 class Plane(pygame.sprite.Sprite):
+    class Pylon:
+        def __init__(self, carrier, offset):
+            self.offset = pygame.math.Vector2(offset)
+            self.carrier = carrier
+            self.item = None
+            self.pos = (0, 0)
+
+        def load(self, obj):
+            self.item = obj
+
+        def fire(self):
+            self.item.deploy()
+            self.item = None
+
+        def pos_call(self):
+            v = self.offset.rotate(self.carrier.angle)
+            x = self.carrier.rect.centerx + v[0]
+            y = self.carrier.rect.centery - v[1]
+            return x, y
+
     element_group = pygame.sprite.Group()
-    __slots__ = ('position', 'angle', 'v', 'health', 'stored', 'size', 'image', 'rect', 'mask', 'flare_timer')
+    __slots__ = ('position', 'angle', 'v', 'health', 'stored', 'size', 'image', 'rect', 'mask', 'flare_timer', 'pylons')
 
     def __init__(self, pos=(0, 0), angle=0, img_path='Assets/Planes/F16.png', is_bot=False):
         super().__init__()
@@ -61,12 +96,17 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.position)
         self.mask = pygame.mask.from_surface(self.image)
         self.flare_timer = 0
+        self.pylons = [self.Pylon(self, (-10.0, -10.0)), self.Pylon(self, (-10.0, 10.0))]
+        for i, pylon in enumerate(self.pylons):
+            pylon.load(Sidewinder(self, i, plane_group))
 
         # Path
         if is_bot:
             self.path = Path(y=self.position[1])
             for point in self.path.path:
                 Plane.element_group.add(ShowElement(point.pos))
+        else:
+            self.aim_cross = AimRetical()
 
     def rotate_img(self):
         self.image = pygame.transform.rotozoom(self.stored, self.angle, self.size)
@@ -77,24 +117,46 @@ class Plane(pygame.sprite.Sprite):
         angle = dir_to(self.rect.center, ang)
         self.angle += math.sin(math.radians(angle - self.angle)) * speed
 
+    def destroy(self):
+        for pylon in self.pylons:
+            if pylon.item:
+                pylon.item.kill()
+        self.kill()
+
     def move(self, amount):
         self.v = pygame.math.Vector2((amount, 0)).rotate(self.angle)
         self.position[0] += self.v[0]
         self.position[1] -= self.v[1]
         if self.rect.right < 0 or self.rect.left > SCREEN_WIDTH or self.rect.bottom < 0 or self.rect.top > SCREEN_HEIGHT:
-            self.kill()
+            self.destroy()
 
     def check_health(self):
         if self.health <= 0:
-            self.kill()
+            self.destroy()
 
     def flare(self):
-            Flare.add_flare(self.rect.center, self.threats)
+        Flare.add_flare(self.rect.center, self.threats)
+
+    def set_aim_cross(self):
+        selected_pylon = None
+        for pylon in self.pylons:
+            if type(pylon.item) is Bomb:
+                selected_pylon = pylon
+                break
+        if selected_pylon:
+            v = pygame.math.Vector2((0.2 - 0.14) / 0.0005 * 1.5, 0).rotate(self.angle)
+            pos = selected_pylon.pos_call()
+            x = pos[0] + v[0]
+            y = pos[1] - v[1]
+            self.aim_cross.pos = (x, y)
+        else:
+            aim_cross_group.sprites()[0].pos = (-100, -100)
 
     def update(self):
         self.face_to(pygame.mouse.get_pos())
         self.move(2)
         self.rotate_img()
+        self.set_aim_cross()
 
 
 class F16(Plane):
@@ -114,4 +176,6 @@ class F16(Plane):
         self.check_health()
 
 
-plane_group = pygame.sprite.Group(Plane(pos=(0, SCREEN_HEIGHT / 2)))
+aim_cross_group = pygame.sprite.Group()
+plane_group = pygame.sprite.Group()
+plane_group.add(Plane(pos=(0, SCREEN_HEIGHT / 2)))

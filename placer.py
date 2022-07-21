@@ -1,6 +1,5 @@
 from settings import *
 from Vehicles import vehicle_group
-from island import island
 
 
 def fill(surface, color):

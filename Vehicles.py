@@ -1,9 +1,16 @@
 from settings import *
 from planes import plane_group
-from effects import Smoke
+from effects import Smoke, explosion_group
 
 
-class Grad(pygame.sprite.Sprite):
+class Vehicle(pygame.sprite.Sprite):
+    def take_damage(self, dmg_range=30):
+        for explosion in explosion_group.sprites():
+            if dis_to(self.rect.center, explosion.rect.center) < dmg_range:
+                self.kill()
+
+
+class Grad(Vehicle):
     __slots__ = ('image', 'rect')
 
     class Missile(pygame.sprite.Sprite):
@@ -27,10 +34,10 @@ class Grad(pygame.sprite.Sprite):
         vehicle_projectile_group.add(self.a)
 
     def update(self):
-        pass
+        self.take_damage(35)
 
 
-class Vads(pygame.sprite.Sprite):
+class Vads(Vehicle):
     __slots__ = ('image', 'rect', 'mask', 'target')
 
     class VadsBullet(pygame.sprite.Sprite):
@@ -85,9 +92,10 @@ class Vads(pygame.sprite.Sprite):
     def update(self):
         self.target = closest_target(self, plane_group.sprites(), max_range=250)
         self.shoot()
+        self.take_damage(30)
 
 
-class ManAA(pygame.sprite.Sprite):
+class ManAA(Vehicle):
     class ManAAMissile(pygame.sprite.Sprite):
         def __init__(self, pos, target):
             super().__init__()
@@ -110,7 +118,8 @@ class ManAA(pygame.sprite.Sprite):
 
         def predicted_los(self, target, r=0):
             if target:
-                t = dis_to(self.rect.center, self.predicted_los(target, r=r + 1) if r <= 2 else target.rect.center) / self.speed
+                t = dis_to(self.rect.center,
+                           self.predicted_los(target, r=r + 1) if r <= 2 else target.rect.center) / self.speed
                 return target.rect.centerx + (target.v[0] * int(t)), target.rect.centery + (
                         -target.v[1] * int(t))
             else:
@@ -118,14 +127,16 @@ class ManAA(pygame.sprite.Sprite):
 
         def check_for_hit(self):
             for overlap in overlaps_with(self, plane_group.sprites()):
-                overlap.health = 0
                 self.remove_threat()
+                overlap.health = 0
                 self.kill()
 
         def remove_threat(self):
             try:
                 self.target.threats.remove(self)
-            except:
+            except ValueError:
+                pass
+            except AttributeError:
                 pass
 
         def check_out_of_bounds(self):
@@ -187,6 +198,7 @@ class ManAA(pygame.sprite.Sprite):
         self.fire_timer += 1
         if self.target and self.fire_timer % 300 == 0:
             self.shoot()
+        self.take_damage(40)
 
 
 vehicle_group = pygame.sprite.Group()
