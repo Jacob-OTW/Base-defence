@@ -1,5 +1,6 @@
 from settings import *
 from Vehicles import vehicle_group
+from island import island
 
 
 def fill(surface, color):
@@ -22,7 +23,7 @@ class Blueprint(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
-        self.rect.center = pygame.mouse.get_pos()
+        self.rect.center = relative_mouse()
 
     def place(self):
         global in_hand

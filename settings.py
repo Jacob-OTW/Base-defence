@@ -4,18 +4,14 @@ import time
 import random
 import sys
 
-SCREEN_WIDTH = 1230
-SCREEN_HEIGHT = 930
+SCREEN_WIDTH = 1920
+SCREEN_HEIGHT = 1080
 pygame.init()
 clock = pygame.time.Clock()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+display = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT)).convert_alpha()
 
 score_font = pygame.font.SysFont("arial", 32, pygame.font.Font.bold)
-
-
-def resize(x, y):
-    print("the screen was resized to:", x, y)
-    SCREEN_WIDTH, SCREEN_HEIGHT = x, y
 
 
 def dir_to(mp, tp):
@@ -24,6 +20,14 @@ def dir_to(mp, tp):
     rads = math.atan2(-dy, dx)
     rads %= 2 * math.pi
     return math.degrees(rads)
+
+
+def relative_mouse(m=None):
+    if m is None:
+        m = pygame.mouse.get_pos()
+    x = m[0] / (display.get_width() / screen.get_width())
+    y = m[1] / (display.get_width() * SCREEN_HEIGHT/SCREEN_WIDTH / screen.get_height())
+    return x, y
 
 
 def round_to_360(x):

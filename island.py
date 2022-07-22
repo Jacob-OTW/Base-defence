@@ -1,4 +1,3 @@
-import pygame
 from settings import *
 
 
@@ -15,4 +14,5 @@ class land(pygame.sprite.Sprite):
         self.rect.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
 
-land_group = pygame.sprite.Group(land())
+island = land()
+land_group = pygame.sprite.Group(island)

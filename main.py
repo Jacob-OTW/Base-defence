@@ -1,3 +1,5 @@
+import pygame.transform
+
 import placer
 from settings import *
 from island import land_group
@@ -6,7 +8,7 @@ from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
 from planes import plane_group, aim_cross_group, F16, Plane
 from effects import smoke_group, flare_group, explosion_group
-from Ordnance import ordnance_group, Sidewinder
+from Ordnance import ordnance_group
 
 
 def handle_keys():
@@ -15,7 +17,7 @@ def handle_keys():
             pygame.quit()
             sys.exit()
         if event.type == pygame.VIDEORESIZE:
-            resize(screen.get_width(), screen.get_height())
+            print(event.w, event.h)
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 F16.spawn_f16()
@@ -29,7 +31,7 @@ def handle_keys():
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if not placer.in_hand:
                 for s in buttons.sprites():
-                    s.check_click(event.pos)
+                    s.check_click(relative_mouse(event.pos))
             else:
                 blueprint_group.sprites()[0].place()
 
@@ -76,6 +78,10 @@ def main():
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
         screen.blit(text2, (100, 150))
+
+        display.blit(
+            pygame.transform.scale(screen, (display.get_width(), display.get_width() * SCREEN_HEIGHT / SCREEN_WIDTH))
+            , (0, 0))
 
         # Refresh
         pygame.display.flip()
