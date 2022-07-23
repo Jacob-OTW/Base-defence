@@ -1,12 +1,10 @@
-import pygame.transform
-
 import placer
 from settings import *
-from island import land_group
+from island import land_group, runway_group
 from button import buttons
 from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
-from planes import plane_group, aim_cross_group, F16, Plane
+from planes import plane_group, aim_cross_group, F16, Plane, element_group
 from effects import smoke_group, flare_group, explosion_group
 from Ordnance import ordnance_group
 
@@ -44,6 +42,7 @@ def main():
         last_time = time.time()
         # Events
         land_group.update()
+        runway_group.update()
         blueprint_group.update()
         vehicle_group.update()
         vehicle_projectile_group.update()
@@ -64,6 +63,7 @@ def main():
         # Visual
         screen.fill((1, 201, 250))
         land_group.draw(screen)
+        runway_group.draw(screen)
         buttons.draw(screen)
         blueprint_group.draw(screen)
         vehicle_projectile_group.draw(screen)
@@ -74,10 +74,12 @@ def main():
         flare_group.draw(screen)
         smoke_group.draw(screen)
         aim_cross_group.draw(screen)
-        Plane.element_group.draw(screen)
+        element_group.draw(screen)
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
         screen.blit(text2, (100, 150))
+        text2 = score_font.render(f"{len(plane_group.sprites())}", True, (255, 255, 255))
+        screen.blit(text2, (100, 200))
 
         display.blit(
             pygame.transform.scale(screen, (display.get_width(), display.get_width() * SCREEN_HEIGHT / SCREEN_WIDTH))

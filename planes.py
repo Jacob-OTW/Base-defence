@@ -1,14 +1,17 @@
 from settings import *
 from effects import Flare, Smoke
 from Ordnance import Bomb, Sidewinder
+from island import runway_group
 
 
 class ShowElement(pygame.sprite.Sprite):
     def __init__(self, pos, special=False):
         super().__init__()
-        self.image = pygame.image.load('Assets/bullet.png').convert_alpha()
+        self.image = pygame.Surface((20, 5)).convert_alpha()
         if special:
             self.image.fill('red')
+        else:
+            self.image.fill('green')
         self.rect = self.image.get_rect(center=pos)
 
 
@@ -29,13 +32,15 @@ class Path:
         self.waypoint_index = 0
         self.path = []
         diversion_amount = 1000
-        for i in range(int(round(SCREEN_WIDTH / n_splits))):
+        for i in range(int(SCREEN_WIDTH / n_splits)):
             if not self.path:
                 self.path.append(self.Waypoint(x_pos=x, y_pos=y))
             else:
                 temp_y = self.path[-1].y() + random.randint(-diversion_amount, diversion_amount)
-                while temp_y < 0 or temp_y > SCREEN_HEIGHT:
-                    temp_y = self.path[-1].y() + random.randint(-diversion_amount, diversion_amount)
+                if temp_y > (screen.get_height() / 10) * 9:
+                    temp_y = (screen.get_height() / 10) * 9
+                elif temp_y < (screen.get_width() / 10):
+                    temp_y = (screen.get_width() / 10)
                 self.path.append(self.Waypoint(x_pos=x + (SCREEN_WIDTH / n_splits) * i, y_pos=temp_y))
 
     def selected_waypoint(self):
@@ -80,7 +85,6 @@ class Plane(pygame.sprite.Sprite):
             y = self.carrier.rect.centery - v[1]
             return x, y
 
-    element_group = pygame.sprite.Group()
     __slots__ = ('position', 'angle', 'v', 'health', 'stored', 'size', 'image', 'rect', 'mask', 'flare_timer', 'pylons')
 
     def __init__(self, pos=(0, 0), angle=0, img_path='Assets/Planes/F16.png'):
@@ -92,6 +96,7 @@ class Plane(pygame.sprite.Sprite):
         self.threats = []
         self.stored = pygame.image.load(img_path).convert_alpha()
         self.size = 0.3
+        self.speed = 2
         self.image = pygame.transform.rotozoom(self.stored, 0, self.size)
         self.rect = self.image.get_rect(center=self.pos)
         self.mask = pygame.mask.from_surface(self.image)
@@ -122,19 +127,32 @@ class Plane(pygame.sprite.Sprite):
         if self.health <= 0:
             self.destroy()
 
-    def flare(self):
+    def over_runway(self) -> bool:
+        return bool(overlaps_with(self, runway_group))
+
+    def accelerate(self) -> None:
+        self.speed = min(self.speed + 0.02, 2)
+
+    def decelerate(self) -> None:
+        self.speed = max(self.speed - 0.01, 0)
+
+    def flare(self) -> None:
         Flare.add_flare(self.rect.center, self.threats)
 
 
 class Player(Plane):
     def __init__(self, pos, angle=0):
-        super().__init__()
+        super().__init__(img_path="Assets/Planes/SU25.png")
         self.pos = pygame.math.Vector2(pos)
         self.angle = angle
+        self.landed = False
         self.aim_cross = AimRetical()
-        self.pylons = [self.Pylon(self, (-10.0, -10.0)), self.Pylon(self, (-10.0, 10.0))]
-        for i, pylon in enumerate(self.pylons):
-            pylon.load(Bomb(self, i))
+        self.pylons = [self.Pylon(self, (-5.0, -20.0)),
+                       self.Pylon(self, (-5.0, -10.0)),
+                       self.Pylon(self, (-5.0, 10.0)),
+                       self.Pylon(self, (-5.0, 20.0))
+                       ]
+        self.reload()
 
     def set_aim_cross(self):
         selected_pylon = None
@@ -156,9 +174,33 @@ class Player(Plane):
             if pylon.item:
                 pylon.item.kill()
 
+    def reload(self):
+        for pylon in self.pylons:
+            if pylon.item:
+                pylon.item.kill()
+                pylon.item = None
+
+        for i, pylon in enumerate(self.pylons):
+            pylon.load(Sidewinder(self, i, plane_group))
+
     def update(self):
+        if self.over_runway():
+            keyboard = pygame.key.get_pressed()
+            if keyboard[pygame.K_s]:
+                self.decelerate()
+            elif keyboard[pygame.K_w]:
+                self.accelerate()
+
+            if self.speed == 0 and not self.landed:
+                self.landed = True
+                self.reload()
+            elif self.speed != 0:
+                self.landed = False
+        else:
+            if self.speed < 2:
+                self.accelerate()
         self.face_to(relative_mouse())
-        self.move(2)
+        self.move(self.speed)
         self.check_out_of_bounds()
         self.set_aim_cross()
         self.update_image()
@@ -173,17 +215,21 @@ class F16(Plane):
         super(F16, self).__init__()
         self.pos = pygame.math.Vector2(pos)
         self.angle = angle
-        self.path = Path(y=self.pos[1])
+        self.path = Path(y=self.pos[1], n_splits=3)
+        self.draw_path()
+
+    def draw_path(self):
         for point in self.path.path:
-            Plane.element_group.add(ShowElement(point.pos))
+            element_group.add(ShowElement(point.pos))
 
     def update(self):
         if self.rect.centerx > self.path.selected_waypoint().x():
             self.path.next_waypoint()
+        self.face_to(self.path.selected_waypoint().pos, speed=1)
         self.flare_timer += 1
         if self.threats and self.flare_timer % 30 == 0:
             self.flare()
-        self.face_to(self.path.selected_waypoint().pos, speed=1)
+
         self.move(2)
         self.check_out_of_bounds()
         self.update_image()
@@ -192,4 +238,5 @@ class F16(Plane):
 
 aim_cross_group = pygame.sprite.Group()
 plane_group = pygame.sprite.Group()
-plane_group.add(Player(pos=(0, SCREEN_HEIGHT / 2)))
+element_group = pygame.sprite.Group()
+plane_group.add(Player(pos=(screen.get_width(), SCREEN_HEIGHT / 2), angle=180))

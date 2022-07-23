@@ -29,15 +29,15 @@ class Explosion(pygame.sprite.Sprite):
 
 class Smoke(pygame.sprite.Sprite):
     @classmethod
-    def add_smoke(cls, pos, m_vec=None, spreadx=(-1, 1), spready=(-1, 1), size=0.2):
-        smoke_group.add(Smoke(pos, m_vec=m_vec, spreadx=spreadx, spready=spready, size=size))
+    def add_smoke(cls, pos, m_vec=None, spreadx=(-1, 1), spready=(-1, 1), size=0.2, opacity=255):
+        smoke_group.add(Smoke(pos, m_vec=m_vec, spreadx=spreadx, spready=spready, size=size, opacity=opacity))
 
-    def __init__(self, pos, m_vec=None, spreadx=(-1, 1), spready=(-1, 1), size=0.2):
+    def __init__(self, pos, m_vec=None, spreadx=(-1, 1), spready=(-1, 1), size=0.2, opacity=255):
         super().__init__()
         self.image = pygame.transform.rotozoom(pygame.image.load('Assets/effects/smoke.png').convert_alpha(), 0, size)
         self.pos = pygame.math.Vector2(pos)
         self.rect = self.image.get_rect(center=self.pos)
-        self.opacity = 255
+        self.opacity = opacity
         self.fall_speed = 0.3
         self.vec = pygame.math.Vector2(random.uniform(spreadx[0], spreadx[1]), random.uniform(spready[0], spready[1]))
         self.m_vec = m_vec

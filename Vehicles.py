@@ -144,23 +144,30 @@ class ManAA(Vehicle):
                 self.remove_threat()
                 self.kill()
 
+        def reduce_speed(self, turn):
+            if self.burner <= 0:
+                self.speed -= abs(turn) / 50
+
         def update(self) -> None:
             self.check_for_hit()
             self.check_out_of_bounds()
             if self.target:
-                face_to(self, self.predicted_los(self.target), self.speed)
+                face_to(self, self.predicted_los(self.target), self.speed, f=self.reduce_speed)
                 if gimbal_limit(self, dir_to(self.rect.center, self.target.rect.center), 70):
                     self.target = None
 
             # Slow down the missile
             self.burner -= 1
             if self.burner <= 0:
-                self.speed *= 0.993
+                self.speed *= 0.999
                 if self.speed <= 0.5:
                     self.remove_threat()
                     self.kill()
             else:
-                Smoke.add_smoke(self.rect.center, spreadx=(-0.2, 0.2), spready=(-0.2, 0.2))
+                v = pygame.math.Vector2(-10, 0).rotate(self.angle)
+                p = self.rect.center
+                smoke_vent = (p[0] + v[0], p[1] - v[1])
+                Smoke.add_smoke(smoke_vent, spreadx=(-0.2, 0.2), spready=(-0.2, 0.2), size=0.1, opacity=122)
 
             # Move the missile
             v = pygame.math.Vector2((self.speed, 0)).rotate(self.angle)
@@ -194,7 +201,7 @@ class ManAA(Vehicle):
             )
 
     def update(self):
-        self.target = closest_target(self, plane_group.sprites(), max_range=500)
+        self.target = closest_target(self, plane_group.sprites(), max_range=350)
         self.fire_timer += 1
         if self.target and self.fire_timer % 300 == 0:
             self.shoot()

@@ -41,9 +41,12 @@ def dis_to(mp, tp):
     return math.hypot(mp[0] - tp[0], mp[1] - tp[1])
 
 
-def face_to(self, ang, turn_limit):
+def face_to(self, ang, turn_limit, f=None):
     angle = dir_to(self.rect.center, ang)
-    self.angle += math.sin(math.radians(angle - self.angle)) * turn_limit
+    turn = math.sin(math.radians(angle - self.angle)) * turn_limit
+    self.angle += turn
+    if f:
+        f(turn)
 
 
 def gimbal_limit(self, angle: int | float, limit: int | float) -> bool:
