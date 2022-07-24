@@ -22,10 +22,10 @@ class Path:
         def __init__(self, x_pos, y_pos):
             self.pos = x_pos, y_pos
 
-        def x(self):
+        def x(self) -> int or float:
             return self.pos[0]
 
-        def y(self):
+        def y(self) -> int or float:
             return self.pos[1]
 
     def __init__(self, x=0, y=SCREEN_HEIGHT / 2, n_splits=3):
@@ -43,10 +43,10 @@ class Path:
                     temp_y = (screen.get_width() / 10)
                 self.path.append(self.Waypoint(x_pos=x + (SCREEN_WIDTH / n_splits) * i, y_pos=temp_y))
 
-    def selected_waypoint(self):
+    def selected_waypoint(self) -> Waypoint:
         return self.path[self.waypoint_index]
 
-    def next_waypoint(self):
+    def next_waypoint(self) -> None:
         self.waypoint_index += 1
 
 
@@ -79,7 +79,7 @@ class Plane(pygame.sprite.Sprite):
             self.item.deploy()
             self.item = None
 
-        def pos_call(self):
+        def pos_call(self) -> tuple[float, float]:
             v = self.offset.rotate(self.carrier.angle)
             x = self.carrier.rect.centerx + v[0]
             y = self.carrier.rect.centery - v[1]
@@ -148,9 +148,9 @@ class Player(Plane):
         self.landed = False
         self.aim_cross = AimRetical()
         self.pylons = [self.Pylon(self, (-5.0, -20.0)),
+                       self.Pylon(self, (-5.0, 20.0)),
                        self.Pylon(self, (-5.0, -10.0)),
-                       self.Pylon(self, (-5.0, 10.0)),
-                       self.Pylon(self, (-5.0, 20.0))
+                       self.Pylon(self, (-5.0, 10.0))
                        ]
         self.reload()
 
@@ -216,7 +216,7 @@ class F16(Plane):
         self.pos = pygame.math.Vector2(pos)
         self.angle = angle
         self.path = Path(y=self.pos[1], n_splits=3)
-        self.draw_path()
+        # self.draw_path()
 
     def draw_path(self):
         for point in self.path.path:

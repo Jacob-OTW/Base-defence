@@ -15,7 +15,8 @@ def handle_keys():
             pygame.quit()
             sys.exit()
         if event.type == pygame.VIDEORESIZE:
-            print(event.w, event.h)
+            pass
+            # print(event.w, event.h)
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 F16.spawn_f16()
