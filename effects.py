@@ -72,7 +72,7 @@ class Flare(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
         for threat in carrier_threats:
-            if random.uniform(0, 1) < 0.4:
+            if random.uniform(0, 1) < threat.trash_chance:
                 try:
                     threat.remove_threat()
                     self.threats.append(threat)

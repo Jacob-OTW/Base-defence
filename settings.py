@@ -22,26 +22,23 @@ def dir_to(mp, tp):
     return math.degrees(rads)
 
 
-def relative_mouse(m=None):
+def relative_mouse(m=None) -> tuple[float, float]:
     if m is None:
         m = pygame.mouse.get_pos()
     x = m[0] / (display.get_width() / screen.get_width())
-    y = m[1] / (display.get_width() * SCREEN_HEIGHT/SCREEN_WIDTH / screen.get_height())
+    y = m[1] / (display.get_width() * SCREEN_HEIGHT / SCREEN_WIDTH / screen.get_height())
     return x, y
 
 
 def round_to_360(x):
-    r = math.degrees(math.asin(math.sin(math.radians(x))))
-    if r > 0:
-        return r
-    return abs(r - 180)
+    return math.degrees(math.asin(math.sin(math.radians(x))))
 
 
 def dis_to(mp, tp):
     return math.hypot(mp[0] - tp[0], mp[1] - tp[1])
 
 
-def face_to(self, ang, turn_limit, f=None):
+def face_to(self, ang, turn_limit, f: callable = None):
     angle = dir_to(self.rect.center, ang)
     turn = math.sin(math.radians(angle - self.angle)) * turn_limit
     self.angle += turn
@@ -54,7 +51,7 @@ def gimbal_limit(self, angle: int | float, limit: int | float) -> bool:
     Return a bool if the target of the missile is outside its turn radius.
     param self: an object that has an angle attribute.
     param angle: an angle as an integer or float to where the missile is meant to fly.
-    param limit: the max. difference between where the missile is pointed and where it is meant to fly.
+    param limit: the max. difference in degrees between where the missile is pointed and where it is meant to fly.
     return: bool if the gimbal limit was reached.
     """
     return abs(((self.angle - angle) + 180) % 360 - 180) > limit
@@ -74,11 +71,24 @@ def closest_target(self, sprites: list, max_range=250, angle_limit=0, exclude=No
     return compare[m]
 
 
-def overlaps_with(self, group: pygame.sprite.Group) -> list:
+def overlaps_with(self, group: pygame.sprite.Group, exclude=None) -> list:
     """
     The listed passed into the filter call checks rect collisions, then, only the objects
     that are also mask colliding will be keep, the final result will be returned
     """
-    return list(filter(lambda obj: self.mask.overlap(obj.mask,
-                                                     (obj.rect.x - self.rect.x, obj.rect.y - self.rect.y)),
-                       pygame.sprite.spritecollide(self, group, False)))
+    r_list = list(filter(lambda obj: self.mask.overlap(obj.mask,
+                                                       (obj.rect.x - self.rect.x, obj.rect.y - self.rect.y)),
+                         pygame.sprite.spritecollide(self, group, False)))
+    if exclude and exclude in r_list:
+        r_list.remove(exclude)
+    return r_list
+
+
+def predicted_los(self, target, speed, r=0):
+    if target:
+        t = dis_to(self.rect.center,
+                   predicted_los(self, target, speed, r=r + 1) if r <= 2 else target.rect.center) / speed
+        return target.rect.centerx + (target.v[0] * int(t)), target.rect.centery + (
+                -target.v[1] * int(t))
+    else:
+        return 0

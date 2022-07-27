@@ -116,6 +116,8 @@ class ManAA(Vehicle):
 
             self.burner = 90  # Amount of ticks before the missile slows down.
 
+            self.trash_chance = 0.4
+
         def predicted_los(self, target, r=0):
             if target:
                 t = dis_to(self.rect.center,

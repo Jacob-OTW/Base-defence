@@ -4,7 +4,7 @@ from island import land_group, runway_group
 from button import buttons
 from placer import blueprint_group
 from Vehicles import vehicle_group, vehicle_projectile_group
-from planes import plane_group, aim_cross_group, F16, Plane, element_group
+from planes import plane_group, aim_cross_group, F16, element_group, player
 from effects import smoke_group, flare_group, explosion_group
 from Ordnance import ordnance_group
 
@@ -14,7 +14,7 @@ def handle_keys():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        if event.type == pygame.VIDEORESIZE:
+        elif event.type == pygame.VIDEORESIZE:
             pass
             # print(event.w, event.h)
         elif event.type == pygame.KEYDOWN:
@@ -23,10 +23,11 @@ def handle_keys():
             elif event.key == pygame.K_w:
                 plane_group.sprites()[0].flare()
             elif event.key == pygame.K_e:
-                for pylon in plane_group.sprites()[0].pylons:
-                    if pylon.item is not None:
-                        pylon.fire()
-                        break
+                player.pylons.cur.data.fire()
+            elif event.key == pygame.K_d:
+                player.pylons.next()
+            elif event.key == pygame.K_a:
+                player.pylons.previous()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if not placer.in_hand:
                 for s in buttons.sprites():
@@ -79,7 +80,7 @@ def main():
 
         text2 = score_font.render(f"{round(frame_time * 1000)}ms", True, (255, 255, 255))
         screen.blit(text2, (100, 150))
-        text2 = score_font.render(f"{len(plane_group.sprites())}", True, (255, 255, 255))
+        text2 = score_font.render(f"{type(player.pylons.cur.data.item)}", True, (255, 255, 255))
         screen.blit(text2, (100, 200))
 
         display.blit(

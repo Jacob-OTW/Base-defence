@@ -1,7 +1,8 @@
 from settings import *
 from effects import Flare, Smoke
-from Ordnance import Bomb, Sidewinder
+from Ordnance import Bomb, Sidewinder, Gun_Pod
 from island import runway_group
+from DataStructs import LinkedCircle
 
 
 class ShowElement(pygame.sprite.Sprite):
@@ -54,6 +55,7 @@ class AimRetical(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.pos = (-100, 100)
+        self.angle = 0
         self.image = pygame.transform.rotozoom(pygame.image.load('Assets/AimCross.png'), 0, 0.4).convert_alpha()
         self.image.set_alpha(255 / 2)
         self.rect = self.image.get_rect(center=self.pos)
@@ -76,8 +78,8 @@ class Plane(pygame.sprite.Sprite):
             self.item = obj
 
         def fire(self):
-            self.item.deploy()
-            self.item = None
+            if self.item:
+                self.item.deploy()
 
         def pos_call(self) -> tuple[float, float]:
             v = self.offset.rotate(self.carrier.angle)
@@ -107,7 +109,7 @@ class Plane(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.pos)
         self.mask = pygame.mask.from_surface(self.image)
 
-    def face_to(self, ang, speed=5):
+    def face_to(self, ang, speed=5.0):
         angle = dir_to(self.rect.center, ang)
         self.angle += math.sin(math.radians(angle - self.angle)) * speed
 
@@ -147,41 +149,65 @@ class Player(Plane):
         self.angle = angle
         self.landed = False
         self.aim_cross = AimRetical()
-        self.pylons = [self.Pylon(self, (-5.0, -20.0)),
-                       self.Pylon(self, (-5.0, 20.0)),
-                       self.Pylon(self, (-5.0, -10.0)),
-                       self.Pylon(self, (-5.0, 10.0))
-                       ]
-        self.reload()
+        self.pylons = LinkedCircle(self.Pylon(self, (0.0, 0.0)),
+                                   self.Pylon(self, (-5.0, 10.0)),
+                                   self.Pylon(self, (-5.0, -10.0)),
+                                   self.Pylon(self, (-5.0, 20.0)),
+                                   self.Pylon(self, (-5.0, -20.0)))
+        self.default_layout = ("Pod", "sidewinder", "sidewinder", "sidewinder", "sidewinder")
+        self.reload(*self.default_layout)
 
     def set_aim_cross(self):
-        selected_pylon = None
-        for pylon in self.pylons:
-            if type(pylon.item) is Bomb:
-                selected_pylon = pylon
-                break
-        if selected_pylon:
-            v = pygame.math.Vector2((0.2 - 0.14) / 0.0005 * 1.5, 0).rotate(self.angle)
-            pos = selected_pylon.pos_call()
+        item = self.pylons.cur.data.item
+        if type(item) == Bomb:
+            v = pygame.math.Vector2((0.2 - 0.14) / 0.0005 * self.speed * 0.75, 0).rotate(self.angle)
+            pos = self.pylons.cur.data.pos_call()
             x = pos[0] + v[0]
             y = pos[1] - v[1]
             self.aim_cross.pos = (x, y)
+        elif type(item) == Sidewinder:
+            lock = self.pylons.cur.data.item.lock_target()
+            if lock is not None:
+                self.aim_cross.pos = lock.pos
+            else:
+                self.aim_cross.pos = (-100, -100)
+        elif type(item) == Gun_Pod:
+            lock = closest_target(self, plane_group.sprites(), max_range=650, angle_limit=90, exclude=self)
+            if lock is not None:
+                self.aim_cross.pos = predicted_los(self, lock, 5)
+            else:
+                self.aim_cross.pos = (-100, -100)
         else:
-            aim_cross_group.sprites()[0].pos = (-100, -100)
+            self.aim_cross.pos = (-100, -100)
 
     def destroy_pylons(self):
-        for pylon in self.pylons:
-            if pylon.item:
-                pylon.item.kill()
+        cur = self.pylons.head
 
-    def reload(self):
-        for pylon in self.pylons:
-            if pylon.item:
-                pylon.item.kill()
-                pylon.item = None
+        while True:
+            cur.data.item.kill()
+            cur.data.item = None
+            cur = cur.next
+            if cur == self.pylons.head:
+                break
 
-        for i, pylon in enumerate(self.pylons):
-            pylon.load(Sidewinder(self, i, plane_group))
+    def reload(self, *weapons):
+        self.pylons.cur = self.pylons.head
+        for weapon in weapons:
+            if self.pylons.cur.data.item is not None:
+                self.pylons.cur.data.item.kill()
+                self.pylons.cur.data.item = None
+            match weapon:
+                case "bomb" | "Bomb":
+                    self.pylons.cur.data.load(Bomb(self, self.pylons.cur))
+                case "sidewinder" | "Sidewinder":
+                    self.pylons.cur.data.load(Sidewinder(self, self.pylons.cur, plane_group))
+                case "pod" | "Pod":
+                    self.pylons.cur.data.load(Gun_Pod(self, self.pylons.cur, plane_group))
+                case None:
+                    pass
+            self.pylons.next()
+            if self.pylons.cur == self.pylons.head:
+                break
 
     def update(self):
         if self.over_runway():
@@ -193,13 +219,13 @@ class Player(Plane):
 
             if self.speed == 0 and not self.landed:
                 self.landed = True
-                self.reload()
+                self.reload(*self.default_layout)
             elif self.speed != 0:
                 self.landed = False
         else:
             if self.speed < 2:
                 self.accelerate()
-        self.face_to(relative_mouse())
+        self.face_to(relative_mouse(), speed=self.speed * 2.5)
         self.move(self.speed)
         self.check_out_of_bounds()
         self.set_aim_cross()
@@ -239,4 +265,5 @@ class F16(Plane):
 aim_cross_group = pygame.sprite.Group()
 plane_group = pygame.sprite.Group()
 element_group = pygame.sprite.Group()
-plane_group.add(Player(pos=(screen.get_width(), SCREEN_HEIGHT / 2), angle=180))
+player = Player(pos=(screen.get_width(), SCREEN_HEIGHT / 2), angle=180)
+plane_group.add(player)
