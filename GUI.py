@@ -11,24 +11,33 @@ class GUI(pygame.sprite.Sprite):
         return None
 
     class GUI_Button(pygame.sprite.Sprite):
-        def __init__(self, gui, relative_pos, filepath: str, callback: callable = None, callback_args: list = None):
+        def __init__(self, gui, relative_pos, filepath: str, on_click: callable = None, on_click_args: list = None):
             pygame.sprite.Sprite.__init__(self)
             self.gui = gui
             self.relative_pos = relative_pos
-            self.callback = callback
-            self.callback_args = callback_args
-            self.image = pygame.transform.scale(pygame.image.load(f"images/{filepath}").convert_alpha(), self.gui.box_size)
+            self.callback = on_click
+            self.callback_args = on_click_args
+            self.sub_gui = None
+            self.cache = None
+            self.image = pygame.transform.scale(pygame.image.load(f"Assets/buttons/{filepath}").convert_alpha(), self.gui.box_size)
             self.rect = self.image.get_rect(topleft=pygame.math.Vector2(gui.rect.topleft) + relative_pos)
 
             gui_group.add(self)
 
         def update(self) -> None:
+            if self.sub_gui is not None and self.sub_gui.done:
+                self.callback_f()
             self.rect.topleft = pygame.math.Vector2(self.gui.rect.topleft) + self.relative_pos
-            if pygame.mouse.get_pressed()[0] and self.rect.collidepoint(pygame.mouse.get_pos()):
+            if pygame.mouse.get_pressed()[0] and self.rect.collidepoint(relative_mouse()):
                 self.callback_f()
 
         def callback_f(self):
             self.callback(self, *self.callback_args)
+
+        def destroy(self):
+            if self.sub_gui is not None:
+                self.sub_gui.destroy()
+            self.kill()
 
     class GUI_Selector(pygame.sprite.Sprite):
         def __init__(self, gui):
@@ -45,13 +54,18 @@ class GUI(pygame.sprite.Sprite):
             self.rect.topleft = pygame.math.Vector2(self.gui.buttons.cur.data.rect.topleft)
 
     def __init__(self, gui_id: str, size: tuple[int, int], content: list[tuple[str, callable, list]] = None,
-                 box_size: tuple[int, int] = (60, 60), parent=None, **pos):
+                 box_size: tuple[int, int] = (60, 60), output_len: int = None, parent=None, callback: callable = None, callback_args=None, **pos):
         super().__init__()
+        if callback_args is None:
+            callback_args = []
         self.output = []
+        self.output_len = output_len
         self.done = False
         self.gui_id = gui_id
         self.pos_args = pos
         self.parent = parent
+        self.callback = callback
+        self.callback_args = callback_args
         self.workspace = {}
         self.box_size = pygame.math.Vector2(box_size)
         self.image = pygame.Surface((self.box_size[0] * size[0], self.box_size[1] * size[1]))
@@ -70,7 +84,7 @@ class GUI(pygame.sprite.Sprite):
             x = counter % size[0]
             y = counter // size[0]
             button = self.GUI_Button(self, (x * self.box_size.x, y * self.box_size.y), filepath=cur.data[0],
-                                     callback=cur.data[1], callback_args=cur.data[2])
+                                     on_click=cur.data[1], on_click_args=cur.data[2])
             self.buttons.add(button)
 
             cur = cur.next_node
@@ -84,7 +98,7 @@ class GUI(pygame.sprite.Sprite):
     def destroy(self, done=False):
         cur = self.buttons.head
         while True:
-            cur.data.kill()
+            cur.data.destroy()
             cur = cur.next_node
             if cur == self.buttons.head:
                 break
@@ -96,6 +110,10 @@ class GUI(pygame.sprite.Sprite):
         self.pos_args = kwargs
 
     def update(self) -> None:
+        if isinstance(self.output_len, int) and len(self.output) >= self.output_len:
+            self.done = True
+        if self.callback is not None:
+            self.callback(self, *self.callback_args)
         self.rect = self.image.get_rect(**self.pos_args)
 
 

@@ -3,6 +3,7 @@ from effects import Flare, Smoke
 from Ordnance import Bomb, Sidewinder, Gun_Pod
 from island import runway_group
 from DataStructs import LinkedCircle
+from GUI import GUI
 
 
 class ShowElement(pygame.sprite.Sprite):
@@ -155,6 +156,7 @@ class Player(Plane):
                                    self.Pylon(self, (-5.0, 20.0)),
                                    self.Pylon(self, (-5.0, -20.0)))
         self.default_layout = ("Pod", "sidewinder", "sidewinder", "sidewinder", "sidewinder")
+        self.guis = []
         self.reload(*self.default_layout)
 
     def set_aim_cross(self):
@@ -209,6 +211,23 @@ class Player(Plane):
             if self.pylons.cur == self.pylons.head:
                 break
 
+    def load_pylon(self, pylon: int, weapon: str):
+        cur = self.pylons.head
+        for i in range(pylon):
+            cur = cur.next_node
+        if cur.data.item is not None:
+            cur.data.item.kill()
+            cur.data.item = None
+        match weapon:
+            case "bomb" | "Bomb":
+                cur.data.load(Bomb(self, cur))
+            case "sidewinder" | "Sidewinder":
+                cur.data.load(Sidewinder(self, cur, plane_group))
+            case "pod" | "Pod":
+                cur.data.load(Gun_Pod(self, cur, plane_group))
+            case None:
+                pass
+
     def update(self):
         if self.over_runway():
             keyboard = pygame.key.get_pressed()
@@ -219,7 +238,6 @@ class Player(Plane):
 
             if self.speed == 0 and not self.landed:
                 self.landed = True
-                self.reload(*self.default_layout)
             elif self.speed != 0:
                 self.landed = False
         else:

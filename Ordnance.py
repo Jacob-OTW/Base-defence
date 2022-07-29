@@ -1,5 +1,3 @@
-import pygame.mask
-
 from settings import *
 from effects import Explosion, Smoke
 
@@ -132,6 +130,10 @@ class Bomb(Ordnance):
         self.size = 0.2
         self.drop_speed = 0.0005
         self.detonation_height = 0.14
+
+    def deploy(self):
+        self.carrier.pylons.next()
+        super().deploy()
 
     def update(self):
         if self.attached:
